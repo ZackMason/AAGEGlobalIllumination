@@ -1,5 +1,8 @@
-# AAGEStarterTemplate
-An easy to use template project for ActuallyAGameEngine https://github.com/ZackMason/ActuallyAGameEngine
+# AAGEGlobalIllumination
+
+CPU GI, working on moving to compute shader
+
+![image](https://user-images.githubusercontent.com/3623261/185831810-c542058d-6364-40e6-b2db-a703e47c9dcf.png)
 
 This template was created using `cpp_init.py` https://github.com/ZackMason/cpp_init
 
