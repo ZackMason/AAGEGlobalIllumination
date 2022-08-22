@@ -85,21 +85,6 @@ struct camera_u {
     m44 vp;
 };
 
-struct light_u {
-    using value_type = light_u;
-    void* data() {
-        return this;
-    }
-    size_t size() const {
-        return 1;
-    }
-
-    void set_position(const v3f& v) {
-        position = v4f{v, 0.0f};
-    }
-
-    v4f position;
-};
 
 int main(int argc, char** argv) {
     random_s::randomize();
@@ -142,7 +127,8 @@ int main(int argc, char** argv) {
                     window.close_window();
                     break;
                 case GLFW_KEY_F:
-                    window.toggle_fullscreen();
+                    if (e.mode == 1)
+                        window.toggle_fullscreen();
                     break;
             }
 
@@ -162,6 +148,8 @@ int main(int argc, char** argv) {
     });
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    //glCullFace(GL_FRONT);
 
     timer32_t timer;
 
@@ -264,6 +252,16 @@ int main(int argc, char** argv) {
             if (ImGui::Button("Recompute Light")) {
                 game.current_chunk.clear_light();
                 game.current_chunk.compute_light({32,32,32}, 10.0f);
+            }
+
+            static bool wire_frame = false;
+            if (ImGui::Checkbox("Wireframe", &wire_frame)){ 
+                if (wire_frame) {
+                    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+                }
+                else {
+                    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+                }
             }
 
             const size_t tex_id = static_cast<size_t>(game.light_map.get().id);

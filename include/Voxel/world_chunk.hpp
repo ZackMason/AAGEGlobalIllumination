@@ -56,20 +56,29 @@ struct world_chunk_t {
             for (int y = 0; y < H; y++) {
                 for (int z = 0; z < D; z++) {
                     // make box
+                    get_voxel(x,y,z).flag = 0;
                     get_voxel(x,y,z).flag = !x || x == W-1 || !y || y == H-1 || !z || z == D-1;
 
                     // pillars
-                    get_voxel(x,y,z).flag |= x == W/3 && z == D/3;
-                    get_voxel(x,y,z).flag |= x == 2*W/3 && z == D/3;
-                    get_voxel(x,y,z).flag |= x == W/3 && z == 2*D/3;
-                    get_voxel(x,y,z).flag |= x == 2*W/3 && z == 2*D/3;
+                    if (!0) {
+                        get_voxel(x,y,z).flag |= x == W/3 && z == D/3;
+                        get_voxel(x,y,z).flag |= x == 2*W/3 && z == D/3;
+                        get_voxel(x,y,z).flag |= x == W/3 && z == 2*D/3;
+                        get_voxel(x,y,z).flag |= x == 2*W/3 && z == 2*D/3;
+                    }
 
                     if (top_hole.contains({x,y,z})) {
                         get_voxel(x,y,z).flag = 0;
                     }
+                }
+            }
+        }
 
+        for (int x = 0; x < W; x++) {
+            for (int y = 0; y < H; y++) {
+                for (int z = 0; z < D; z++) {
                     if (get_voxel(x,y,z).flag) {
-                        emit_cube(v3f{x,y,z}*voxel_size);
+                        emit_cube(v3f{x,y,z});
                     }
                 }
             }
@@ -94,11 +103,18 @@ struct world_chunk_t {
     }
 
     voxel_t& get_voxel(auto x, auto y, auto z) {
-        return voxels[x + y*(W*H) + z * (W)];
+        return voxels[x + y*(W*D) + z * (W)];
     }
 
     voxel_t& get_voxel(v3i p) {
         return get_voxel(p.x, p.y, p.z);
+    }
+
+    voxel_t* try_voxel(v3i p) {
+        if (p.x < 0 || p.y < 0 || p.z < 0 || p.x >= W || p.y >= H || p.z >= D) {
+            return nullptr;
+        }
+        return &get_voxel(p);
     }
 
     void emit_cube(const v3f& pos) {
@@ -111,13 +127,19 @@ struct world_chunk_t {
     }
 
     void emit_face(const v3f& pos, const v3f& dir) {
+        const v3i index = v3i{pos + dir};
+        if (const auto voxel = try_voxel(index); voxel && voxel->flag) {
+            //logger_t::info(fmt::format("Culling face: {} + {} = {}", pos, dir, index));
+            return;
+        }
+
         const f32 scale = 0.5f * voxel_size;
         const v3f tangent = v3f{dir.y, dir.z, dir.x} * scale;
         const v3f bitangent = glm::normalize(glm::cross(dir, tangent)) * scale;
 
         const auto emit = [&](float i, float j) {
             vertex_t vertex;
-            vertex.position = pos + dir * scale + tangent * i + bitangent * j;
+            vertex.position = voxel_size * pos + dir * scale + tangent * i + bitangent * j;
             vertex.normal = dir;
             vertex.uv = v2f{ i < 0 ? 0 : 1, j < 0 ? 0 : 1};
             vertex.luv = v2f{
@@ -139,8 +161,8 @@ struct world_chunk_t {
         };
 
         emit(1,1);
-        emit(1,-1);
         emit(-1, 1);
+        emit(1,-1);
 
         emit(1,-1);
         emit(-1,1);

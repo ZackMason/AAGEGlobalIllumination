@@ -16,6 +16,8 @@ void main() {
 
     //FragColor.rgb = color.rgb * max(0.3, dot(normalize(fs_in.normal), normalize(vec3(1,2,1.5))));
     FragColor.rgb = color.rgb * fs_in.lum;
+
+    //FragColor.rgb = fs_in.normal;
     
     FragColor.a = 1.0;
 }
