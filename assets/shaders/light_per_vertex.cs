@@ -19,6 +19,7 @@ layout(std430, binding = 0) buffer vertices {
 uniform int vert_size;
 
 const int texture_size = 1024;
+const float uv_pixel_size = 1.0 / 1024.0;
 
 float sign3(vec2 p1, vec2 p2, vec2 p3) {
     return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
@@ -41,14 +42,22 @@ vec3 draw_triangle(vec2 uv, vertex_t v0, vertex_t v1, vertex_t v2) {
 }
 
 void main() {
-    ivec2 pixel_coord = ivec2(gl_GlobalInvocationID.xy);
-    vec2 pixel_uv = vec2(pixel_coord) / 1024.0;
- //   imageStore(uOutput, pixel_coord, vec4(0));
+    int triangle = int(gl_GlobalInvocationID.x);
+    int v0 = triangle * 3 + 0;
+    int v1 = triangle * 3 + 1;
+    int v2 = triangle * 3 + 2;
+    
+    vec2 luv0 = verts[v0].luv;
+    vec2 luv1 = verts[v1].luv;
+    vec2 luv2 = verts[v2].luv;
+
+    ivec2 lcoord0 = ivec2(luv0 * 1024.0);
+    ivec2 lcoord1 = ivec2(luv1 * 1024.0);
+    ivec2 lcoord2 = ivec2(luv2 * 1024.0);
 
     vec3 color = vec3(1.0, 0.0, 0.0);
-    for (int i = 0; i < vert_size; i += 3) { // for each triangle
-        color += draw_triangle(pixel_uv, verts[i], verts[i+1], verts[i+2]);
-    }
+ 
+    
     
     color = normalize(color);
 

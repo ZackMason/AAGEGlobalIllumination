@@ -146,14 +146,6 @@ struct world_chunk_t {
                 i < 0 ? current_luv.x : current_luv.x + luv_size,
                 j < 0 ? current_luv.y : current_luv.y + luv_size
             };
-            current_luv.x += luv_size + luv_gap;
-            if (current_luv.x >= 1.0f) {
-                current_luv.x = luv_gap;
-                current_luv.y += luv_size + luv_gap;
-            }
-            if (current_luv.y >= 1.0f) {
-                logger_t::warn("VOXEL :: Light Map UV exceeded 1.0f!");
-            }
             
             buffer.data.push_back(vertex);
             
@@ -168,6 +160,15 @@ struct world_chunk_t {
         emit(-1,1);
         emit(-1,-1);
 
+        current_luv.x += luv_size + luv_gap;
+        if (current_luv.x >= 1.0f - luv_size) {
+            current_luv.x = luv_gap;
+            current_luv.y += luv_size + luv_gap;
+        }
+        if (current_luv.y >= 1.0f - luv_size) {
+            logger_t::warn("VOXEL :: Light Map UV exceeded 1.0f!");
+        }
+        
         vertex_array.size = static_cast<GLsizei>(buffer.data.size());
     }
 
@@ -272,8 +273,8 @@ struct world_chunk_t {
     f32 voxel_size{8.0f};
 
 private:
-    f32 luv_size{1.0f/W/W};
-    f32 luv_gap{luv_size*0.01f};
+    f32 luv_size{1.0f/1024.0f*10.0f};
+    f32 luv_gap{std::max(1.0f/1024.0f, luv_size*0.01f)};
     v2f current_luv{luv_gap};
 };
 

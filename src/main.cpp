@@ -163,13 +163,12 @@ int main(int argc, char** argv) {
             ? "fefefeff"_rgba : "afafafff"_rgba;
     });
 
-    resource_handle_t<shader_t> light_compute_shader = game.asset_loader.get_shader("light", {"shaders/light.cs"});
+    resource_handle_t<shader_t> light_compute_shader = game.asset_loader.get_shader("light", {"shaders/light_per_vertex.cs"});
     game.light_map = game.asset_loader.create_texture2d("light_map", 1024, 1024);
     
     game.light_map.get().set([](int x, int y) -> u32 {
         return sin(x/1024.0f*3.1f*20.0f) * cos(y/1024.0f*3.1f*20.0f) > 0.0f ? color::rgba::black : color::rgba::white;
     });
-
 
     logger_t::info(fmt::format("Number of vertices: {}", game.current_chunk.vertex_array.size));
 
@@ -209,23 +208,7 @@ int main(int argc, char** argv) {
         /////////////////////////////
         // Global Illumination
 
-        constexpr auto compute_gi = false;
-
-        if constexpr (compute_gi) {
-            const auto compute_id = light_compute_shader.get().id;
-            light_compute_shader.get().bind();
-            light_compute_shader.get().set_int("uOutput", 0);
-            light_compute_shader.get().set_int("vert_size", game.current_chunk.vertex_array.size);
-
-            game.light_map.get().slot = 0;
-            game.light_map.get().bind_image();
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, game.current_chunk.vertex_array.id);
-
-            glDispatchCompute(1024, 1024, 1);
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        } else {
-            
-        }
+        
 
 
         /////////////////////////////
@@ -254,8 +237,24 @@ int main(int argc, char** argv) {
                 game.current_chunk.compute_light({32,32,32}, 10.0f);
             }
 
+            if (ImGui::Button("Run Compute Shader")) {
+                const auto compute_id = light_compute_shader.get().id;
+                light_compute_shader.get().bind();
+                light_compute_shader.get().set_int("uOutput", 0);
+                light_compute_shader.get().set_int("vert_size", game.current_chunk.vertex_array.size);
+
+                game.light_map.get().slot = 0;
+                game.light_map.get().bind_image();
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, game.current_chunk.vertex_array.id);
+                
+                glDispatchCompute(game.current_chunk.vertex_array.size / 3, 1, 1);
+                //glDispatchCompute(1024, 1024, 1);
+
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            }
+
             static bool wire_frame = false;
-            if (ImGui::Checkbox("Wireframe", &wire_frame)){ 
+            if (ImGui::Checkbox("Wireframe", &wire_frame)) { 
                 if (wire_frame) {
                     glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
                 }

@@ -18,6 +18,8 @@ void main() {
     FragColor.rgb = color.rgb * fs_in.lum;
 
     //FragColor.rgb = fs_in.normal;
+    FragColor.rg = fs_in.luv;
+    FragColor.b = 0.0;
     
     FragColor.a = 1.0;
 }
